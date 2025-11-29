@@ -1,6 +1,8 @@
 package com.usercrud.api;
 
 import com.usercrud.domain.User;
+import com.usercrud.exception.UserNotFoundException;
+import com.usercrud.exception.UsernameAlreadyExistsException;
 import com.usercrud.service.UserService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -26,7 +28,7 @@ public class UserResource {
      * Creates a new user.
      *
      * @param user the user to create
-     * @return Response with created user and 201 status, or 400 if validation fails
+     * @return Response with created user and 201 status, 400 if validation fails, or 409 if username exists
      */
     @POST
     public Response createUser(User user) {
@@ -35,6 +37,9 @@ public class UserResource {
             return Response.status(Response.Status.CREATED).entity(createdUser).build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErrorResponse(e.getMessage())).build();
+        } catch (UsernameAlreadyExistsException e) {
+            return Response.status(Response.Status.CONFLICT)
                     .entity(new ErrorResponse(e.getMessage())).build();
         }
     }
@@ -73,7 +78,7 @@ public class UserResource {
      *
      * @param id   the user id
      * @param user the user data to update
-     * @return Response with updated user and 200 status, or 404 if not found
+     * @return Response with updated user and 200 status, 404 if not found, or 409 if username exists
      */
     @PUT
     @Path("/{id}")
@@ -81,8 +86,11 @@ public class UserResource {
         try {
             User updatedUser = userService.updateUser(id, user);
             return Response.ok(updatedUser).build();
-        } catch (IllegalArgumentException e) {
+        } catch (UserNotFoundException e) {
             return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ErrorResponse(e.getMessage())).build();
+        } catch (UsernameAlreadyExistsException e) {
+            return Response.status(Response.Status.CONFLICT)
                     .entity(new ErrorResponse(e.getMessage())).build();
         }
     }
@@ -99,7 +107,7 @@ public class UserResource {
         try {
             userService.deleteUser(id);
             return Response.noContent().build();
-        } catch (IllegalArgumentException e) {
+        } catch (UserNotFoundException e) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(new ErrorResponse(e.getMessage())).build();
         }

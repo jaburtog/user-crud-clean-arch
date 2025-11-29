@@ -1,6 +1,8 @@
 package com.usercrud.service;
 
 import com.usercrud.domain.User;
+import com.usercrud.exception.UserNotFoundException;
+import com.usercrud.exception.UsernameAlreadyExistsException;
 import com.usercrud.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,7 +54,7 @@ class UserServiceTest {
     void testCreateUser_UsernameAlreadyExists() {
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(UsernameAlreadyExistsException.class, () -> {
             userService.createUser(testUser);
         });
         
@@ -128,7 +130,7 @@ class UserServiceTest {
         User updatedData = new User(null, "newusername", "newemail@example.com");
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(UserNotFoundException.class, () -> {
             userService.updateUser(1L, updatedData);
         });
     }
@@ -141,7 +143,7 @@ class UserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(userRepository.findByUsername("existinguser")).thenReturn(Optional.of(existingUser));
 
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(UsernameAlreadyExistsException.class, () -> {
             userService.updateUser(1L, updatedData);
         });
     }
@@ -160,7 +162,7 @@ class UserServiceTest {
     void testDeleteUser_UserNotFound() {
         when(userRepository.existsById(1L)).thenReturn(false);
 
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(UserNotFoundException.class, () -> {
             userService.deleteUser(1L);
         });
         

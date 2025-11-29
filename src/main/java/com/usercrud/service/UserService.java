@@ -1,6 +1,8 @@
 package com.usercrud.service;
 
 import com.usercrud.domain.User;
+import com.usercrud.exception.UserNotFoundException;
+import com.usercrud.exception.UsernameAlreadyExistsException;
 import com.usercrud.repository.UserRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -23,7 +25,8 @@ public class UserService {
      *
      * @param user the user to create
      * @return the created user
-     * @throws IllegalArgumentException if username or email already exists
+     * @throws IllegalArgumentException if username or email is empty
+     * @throws UsernameAlreadyExistsException if username already exists
      */
     public User createUser(User user) {
         if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
@@ -35,7 +38,7 @@ public class UserService {
 
         // Check if username already exists
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            throw new IllegalArgumentException("Username already exists");
+            throw new UsernameAlreadyExistsException(user.getUsername());
         }
 
         return userRepository.save(user);
@@ -76,17 +79,18 @@ public class UserService {
      * @param id   the user id
      * @param user the user data to update
      * @return the updated user
-     * @throws IllegalArgumentException if user not found
+     * @throws UserNotFoundException if user not found
+     * @throws UsernameAlreadyExistsException if new username is already taken
      */
     public User updateUser(Long id, User user) {
         User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
+                .orElseThrow(() -> new UserNotFoundException(id));
 
         if (user.getUsername() != null && !user.getUsername().trim().isEmpty()) {
             // Check if new username is already taken by another user
             Optional<User> userWithSameUsername = userRepository.findByUsername(user.getUsername());
             if (userWithSameUsername.isPresent() && !userWithSameUsername.get().getId().equals(id)) {
-                throw new IllegalArgumentException("Username already exists");
+                throw new UsernameAlreadyExistsException(user.getUsername());
             }
             existingUser.setUsername(user.getUsername());
         }
@@ -102,11 +106,11 @@ public class UserService {
      * Deletes a user by id.
      *
      * @param id the user id
-     * @throws IllegalArgumentException if user not found
+     * @throws UserNotFoundException if user not found
      */
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
-            throw new IllegalArgumentException("User not found with id: " + id);
+            throw new UserNotFoundException(id);
         }
         userRepository.deleteById(id);
     }
