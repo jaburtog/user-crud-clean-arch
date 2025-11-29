@@ -64,6 +64,10 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public boolean existsById(Long id) {
-        return entityManager.find(User.class, id) != null;
+        Long count = entityManager.createQuery(
+                "SELECT COUNT(u) FROM User u WHERE u.id = :id", Long.class)
+                .setParameter("id", id)
+                .getSingleResult();
+        return count > 0;
     }
 }
